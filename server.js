@@ -8,14 +8,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Dama = require('./public/dama.js');
 
-const { PORT = 3000, JWT_SECRET = 'change-me', TURN_SECONDS = 60 } = process.env;
+const { PORT = 23687, JWT_SECRET = 'change-me', TURN_SECONDS = 60 } = process.env;
 const TURN_MS = Number(TURN_SECONDS) * 1000;
 if (JWT_SECRET === 'change-me') console.warn('Warning: set JWT_SECRET in .env before going public.');
 
 const db = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  host: process.env.DB_HOST || 'mysql-37610bae-jeromequijano17-df99.l.aivencloud.com',
+  user: process.env.DB_USER || 'jeromequijano',
+  password: process.env.DB_PASSWORD || 'AVNS_Qd6zdoKt3mtXSDLyrRg',
   database: process.env.DB_NAME || 'dama',
   waitForConnections: true,
   connectionLimit: 10,
