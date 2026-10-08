@@ -13,12 +13,19 @@ const TURN_MS = Number(TURN_SECONDS) * 1000;
 if (JWT_SECRET === 'change-me') console.warn('Warning: set JWT_SECRET in .env before going public.');
 
 const db = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'dama',
+  host: process.env.DB_HOST,
+  port: Number(process.env.DB_PORT || 23687),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+
+  ssl: {
+    rejectUnauthorized: false
+  },
+
   waitForConnections: true,
   connectionLimit: 10,
+  queueLimit: 0,
 });
 const parse = (v) => (typeof v === 'string' ? JSON.parse(v) : v); // MariaDB returns JSON as text
 
