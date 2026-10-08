@@ -13,9 +13,9 @@ const TURN_MS = Number(TURN_SECONDS) * 1000;
 if (JWT_SECRET === 'change-me') console.warn('Warning: set JWT_SECRET in .env before going public.');
 
 const db = mysql.createPool({
-  host: process.env.DB_HOST || 'mysql-37610bae-jeromequijano17-df99.l.aivencloud.com',
-  user: process.env.DB_USER || 'jeromequijano',
-  password: process.env.DB_PASSWORD || 'AVNS_Qd6zdoKt3mtXSDLyrRg',
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'dama',
   waitForConnections: true,
   connectionLimit: 10,
