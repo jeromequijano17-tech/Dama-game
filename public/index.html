@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dama: Filipino checkers online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--sea:#dce9e5;--ink:#12303a;--panel:#f4faf8;--line:#b5cdc6;--teal:#0f5c63;--teal2:#0b474d;--mango:#f0a81e;--narra:#5a3826;--rattan:#e5dcc4;--bad:#a63a2b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sea);color:var(--ink);font:16px/1.5 'Bricolage Grotesque',system-ui,sans-serif}
+h2{margin:0 0 10px;font-size:20px;letter-spacing:-.01em}
+.app{max-width:1080px;margin:0 auto;padding:16px 16px 48px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0 16px}
+.brand{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.brand small{display:block;margin-top:4px;font-size:13px;font-weight:400;letter-spacing:0;opacity:.7}
+#me{display:flex;align-items:center;gap:10px}
+.rt{opacity:.7;font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer;border:1px solid transparent;border-radius:8px;padding:9px 16px;background:var(--teal);color:#fff}
+button:hover{background:var(--teal2)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--teal);border-color:var(--teal)}
+button.ghost:hover{background:rgba(15,92,99,.1)}
+button.danger{color:var(--bad);border-color:var(--bad)}
+button.go{background:var(--mango);color:#2b1c00;font-weight:600;font-size:18px;padding:14px 26px}
+button.go:hover{background:#e29b12}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--mango);outline-offset:2px}
+input{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;width:100%;background:#fff;color:var(--ink)}
+label{display:block;margin-bottom:12px;font-weight:600}
+label input{margin-top:4px;font-weight:400}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.hidden{display:none!important}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.err{color:var(--bad);min-height:1.5em;margin:0 0 8px}
+.banner{background:#fff3cd;border:1px solid #e3c36a;padding:8px 12px;border-radius:8px;margin-bottom:12px}
+.auth{max-width:380px;margin:32px auto}
+.lobby{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.lobby .wide{grid-column:1/-1}
+.stats{margin:0 0 16px}
+details{margin-top:18px}
+summary{cursor:pointer;font-weight:600}
+details ul{margin:8px 0 0;padding-left:20px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-weight:600;border-bottom:1px solid var(--line)}
+th,td{padding:6px 8px}
+td:first-child,th:first-child{width:36px}
+tr.me td{background:rgba(240,168,30,.22)}
+.hist{list-style:none;margin:0;padding:0}
+.hist li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.hist li:last-child{border:0}
+.hist .res{font-weight:800;min-width:48px}
+.hist .won{color:#1f7a4a}.hist .lost{color:var(--bad)}
+.hist .why{opacity:.7;flex:1}
+.hist button{padding:5px 12px}
+.game{display:grid;grid-template-columns:minmax(0,580px) 1fr;gap:24px;align-items:start}
+.strip{display:flex;align-items:center;gap:8px;padding:6px 4px}
+.dot{width:9px;height:9px;border-radius:50%;background:#9bb}
+.dot.on{background:#2f9e63}
+.clock{margin-left:auto;font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.clock.low{color:var(--bad)}
+/* The frame is a woven banig mat; the board sits inside it */
+.frame{padding:14px;border-radius:10px;background:repeating-conic-gradient(#a9703d 0 25%,#cf9d62 0 50%) 0 0/14px 14px;box-shadow:0 10px 24px rgba(18,48,58,.28)}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border:3px solid #3a2417}
+.sq{position:relative;display:flex}
+.sq.lt{background:var(--rattan)}
+.sq.dk{background:var(--narra)}
+.sq.dk.last{background:#85582f}
+.sq.sel{box-shadow:inset 0 0 0 4px var(--mango)}
+.sq.via{box-shadow:inset 0 0 0 3px var(--mango)}
+.sq.can,.sq.tgt{cursor:pointer}
+.sq.tgt::before{content:"";position:absolute;inset:38%;border-radius:50%;background:var(--mango)}
+.pc{position:absolute;inset:10%;border-radius:50%;display:grid;place-items:center;box-shadow:0 3px 4px rgba(0,0,0,.45)}
+.pc.w{background:radial-gradient(circle at 35% 30%,#fff,#e9e4d6 55%,#b9b29c)}
+.pc.b{background:radial-gradient(circle at 35% 30%,#52639b,#1c2748 60%,#0c1330)}
+.pc.dama{box-shadow:0 3px 4px rgba(0,0,0,.45),inset 0 0 0 4px var(--mango)}
+.pc.dama::after{content:"\265B";font-style:normal;font-size:clamp(14px,4vw,28px);line-height:1}
+.pc.w.dama::after{color:#8a5a00}
+.pc.b.dama::after{color:var(--mango)}
+.side{display:flex;flex-direction:column;gap:12px}
+.status{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em}
+.offer{background:#fff3cd;border:1px solid #e3c36a;border-radius:8px;padding:10px 12px}
+.offer .row{margin-top:8px}
+.chat{height:230px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.chat p{margin:0 0 4px;overflow-wrap:anywhere}
+.chat b.mine{color:var(--teal)}
+#chatform input{flex:1;width:auto}
+.overlay{position:fixed;inset:0;background:rgba(18,48,58,.62);display:grid;place-items:center;padding:16px;z-index:5}
+.modal{background:var(--panel);border-radius:14px;padding:28px;max-width:360px;width:100%;text-align:center}
+.modal h2{font-size:32px;margin-bottom:4px}
+.modal .row{justify-content:center;margin-top:16px}
+@media(max-width:860px){.game,.lobby{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">Dama<small>Filipino checkers for two</small></div>
+    <div id="me" class="hidden"><span><b id="meName"></b> <span id="meRating" class="rt"></span></span><button class="ghost" id="logout">Log out</button></div>
+  </header>
+  <div id="conn" class="banner hidden">Connection lost. Reconnecting...</div>
+
+  <section id="auth" class="panel auth">
+    <h2>Play dama online</h2>
+    <label>Username<input id="u" autocomplete="username" maxlength="24"></label>
+    <label>Password<input id="p" type="password" autocomplete="current-password"></label>
+    <p id="authErr" class="err" role="alert"></p>
+    <div class="row"><button id="login">Log in</button><button class="ghost" id="register">Create account</button></div>
+  </section>
+
+  <section id="lobby" class="hidden">
+    <div class="lobby">
+      <div class="panel">
+        <h2>Ready to play?</h2>
+        <p id="stats" class="stats"></p>
+        <button class="go" id="find">Find a match</button>
+        <details>
+          <summary>How dama is played</summary>
+          <ul>
+            <li>Chips move one square diagonally forward. White goes first.</li>
+            <li>Jump an opposing chip to capture it. Men may capture backward too.</li>
+            <li>Captures are required, and you must take the route that captures the most chips.</li>
+            <li>A chip that ends its move on the far row becomes a dama. A dama slides and captures any distance along a diagonal.</li>
+            <li>You lose if you have no legal move, or if your turn timer runs out.</li>
+          </ul>
+        </details>
+      </div>
+      <div class="panel">
+        <h2>Leaderboard</h2>
+        <table><thead><tr><th>#</th><th>Player</th><th>Rating</th><th>W-L-D</th></tr></thead><tbody id="lb"></tbody></table>
+      </div>
+      <div class="panel wide">
+        <h2>Your recent games</h2>
+        <ul id="hist" class="hist"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="game" class="hidden">
+    <div class="game">
+      <div>
+        <div class="strip" id="top"></div>
+        <div class="frame"><div class="board" id="board"></div></div>
+        <div class="strip" id="bot"></div>
+      </div>
+      <aside class="panel side">
+        <p class="status" id="status"></p>
+        <div id="offer" class="offer hidden"></div>
+        <div class="row">
+          <button class="ghost" id="draw">Offer draw</button>
+          <button class="ghost" id="undo">Ask to undo</button>
+          <button class="ghost danger" id="resign">Resign</button>
+        </div>
+        <div id="chatlog" class="chat" aria-live="polite"></div>
+        <form id="chatform" class="row"><input id="chatin" maxlength="300" placeholder="Say something..." autocomplete="off" aria-label="Chat message"><button>Send</button></form>
+      </aside>
+    </div>
+  </section>
+
+  <section id="replay" class="hidden">
+    <div class="game">
+      <div class="frame"><div class="board" id="rboard"></div></div>
+      <aside class="panel side">
+        <h2 id="rtitle"></h2>
+        <p id="rinfo" class="status"></p>
+        <div class="row">
+          <button class="ghost" data-r="first">First</button>
+          <button class="ghost" data-r="prev">Back</button>
+          <button class="ghost" data-r="next">Next</button>
+          <button class="ghost" data-r="last">Last</button>
+          <button id="rplay">Auto-play</button>
+        </div>
+        <button class="ghost" id="rback">Back to lobby</button>
+      </aside>
+    </div>
+  </section>
+</div>
+
+<div id="result" class="overlay hidden">
+  <div class="modal">
+    <h2 id="resTitle"></h2>
+    <p id="resText"></p>
+    <div class="row"><button id="resReplay" class="ghost">Watch replay</button><button id="resLobby">Back to lobby</button></div>
+  </div>
+</div>
+
+<script src="dama.js"></script>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eq = (a, b) => a[0] === b[0] && a[1] === b[1];
+const starts = (path, pre) => pre.every((p, i) => path[i] && eq(path[i], p));
+const REASONS = { resign: 'by resignation', timeout: 'on time', no_moves: 'by blocking all moves', agreed: 'by agreement', quiet: 'after 40 moves without a capture' };
+
+let token = localStorage.getItem('dama_token'), me = null, ws = null;
+let G = null, sel = null, deadlineAt = 0, searching = false, R = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    body: opts.body && JSON.stringify(opts.body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+  return data;
+}
+const send = (m) => ws && ws.readyState === 1 && ws.send(JSON.stringify(m));
+
+function show(v) {
+  ['auth', 'lobby', 'game', 'replay'].forEach((n) => $('#' + n).classList.toggle('hidden', n !== v));
+  $('#me').classList.toggle('hidden', v === 'auth');
+  if (v !== 'replay' && R) { clearInterval(R.timer); R.timer = null; $('#rplay').textContent = 'Auto-play'; }
+}
+
+/* ------------------------------- Accounts -------------------------------- */
+async function authenticate(kind) {
+  try {
+    const d = await api('/api/' + kind, { method: 'POST', body: { username: $('#u').value.trim(), password: $('#p').value } });
+    token = d.token; localStorage.setItem('dama_token', token); me = d.user;
+    $('#p').value = ''; $('#authErr').textContent = '';
+    enter();
+  } catch (e) { $('#authErr').textContent = e.message; }
+}
+function enter() { renderMe(); connect(); show('lobby'); loadLobby(); }
+function logout() {
+  token = null; G = null; localStorage.removeItem('dama_token');
+  if (ws) ws.close();
+  $('#result').classList.add('hidden');
+  show('auth');
+}
+function renderMe() {
+  $('#meName').textContent = me.username;
+  $('#meRating').textContent = me.rating;
+  $('#stats').textContent = `Rating ${me.rating}. Record: ${me.wins} won, ${me.losses} lost, ${me.draws} drawn.`;
+}
+
+/* --------------------------------- Lobby --------------------------------- */
+async function loadLobby() {
+  try {
+    const [u, lb, hist] = await Promise.all([api('/api/me'), api('/api/leaderboard'), api('/api/history')]);
+    me = u; renderMe();
+    $('#lb').innerHTML = lb.map((p, i) => `<tr class="${p.username === me.username ? 'me' : ''}"><td>${i + 1}</td><td>${esc(p.username)}</td><td>${p.rating}</td><td>${p.wins}-${p.losses}-${p.draws}</td></tr>`).join('')
+      || '<tr><td colspan="4">No players yet.</td></tr>';
+    $('#hist').innerHTML = hist.map((g) => {
+      const mine = g.white === me.username ? 'w' : 'b';
+      const opp = mine === 'w' ? g.black : g.white;
+      const d = mine === 'w' ? g.white_delta : g.black_delta;
+      const res = g.winner === null ? ['Draw', ''] : g.winner === mine ? ['Won', 'won'] : ['Lost', 'lost'];
+      return `<li><span class="res ${res[1]}">${res[0]}</span><span class="why">vs ${esc(opp)}, ${REASONS[g.end_reason] || ''} (${d > 0 ? '+' : ''}${d})</span><button class="ghost" data-replay="${g.id}">Replay</button></li>`;
+    }).join('') || '<li>No finished games yet. Find a match to play your first one.</li>';
+  } catch (e) { if (/log in/i.test(e.message)) logout(); }
+}
+function setSearching(on) {
+  searching = on;
+  $('#find').textContent = on ? 'Searching for an opponent. Click to cancel' : 'Find a match';
+}
+
+/* ------------------------------ Live socket ------------------------------ */
+function connect() {
+  if (ws) ws.close();
+  const sock = (ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host));
+  sock.onopen = () => send({ type: 'auth', token });
+  sock.onmessage = (e) => handle(JSON.parse(e.data));
+  sock.onclose = () => {
+    if (!token || sock !== ws) return;
+    $('#conn').classList.remove('hidden');
+    setTimeout(() => token && sock === ws && connect(), 1500);
+  };
+}
+function handle(m) {
+  if (m.type === 'ready') {
+    $('#conn').classList.add('hidden');
+    if (!m.inGame && G && !G.over) { G = null; show('lobby'); loadLobby(); }
+    setSearching(m.queued);
+  } else if (m.type === 'queued') setSearching(true);
+  else if (m.type === 'lobby') setSearching(false);
+  else if (m.type === 'game') {
+    if (!G || G.id !== m.id || JSON.stringify(G.state) !== JSON.stringify(m.state)) sel = null;
+    G = m; deadlineAt = Date.now() + (m.ms || 0);
+    setSearching(false);
+    renderGame();
+  } else if (m.type === 'chat') { if (G) { G.chat.push(m.msg); renderChat(); } }
+  else if (m.type === 'authfail') logout();
+}
+
+/* ---------------------------------- Board -------------------------------- */
+function renderBoard(el, board, o = {}) {
+  el.innerHTML = '';
+  const targets = new Set(), via = new Set(), legal = o.legal || [];
+  if (o.sel) {
+    legal.filter((m) => eq(m.from, o.sel.from) && starts(m.path, o.sel.path))
+      .forEach((m) => m.path.length > o.sel.path.length && targets.add(m.path[o.sel.path.length].join()));
+    o.sel.path.forEach((p) => via.add(p.join()));
+  }
+  const froms = new Set(legal.map((m) => m.from.join()));
+  const last = new Set(o.last ? [o.last.from, ...o.last.path].map((p) => p.join()) : []);
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) {
+    const r = o.flip ? 7 - i : i, c = o.flip ? 7 - j : j, k = r + ',' + c;
+    const d = document.createElement('div');
+    d.className = 'sq ' + ((r + c) % 2 ? 'dk' : 'lt') + (last.has(k) ? ' last' : '') + (o.sel && o.sel.from.join() === k ? ' sel' : '')
+      + (via.has(k) ? ' via' : '') + (targets.has(k) ? ' tgt' : '') + (froms.has(k) ? ' can' : '');
+    const p = board[r][c];
+    if (p) { const s = document.createElement('i'); s.className = 'pc ' + p.toLowerCase() + (p === p.toUpperCase() ? ' dama' : ''); d.append(s); }
+    if (o.click) d.onclick = () => o.click(r, c);
+    el.append(d);
+  }
+}
+
+function onCell(r, c) {
+  if (!G || !G.legal.length) return;
+  if (sel) {
+    const next = [...sel.path, [r, c]];
+    const cands = G.legal.filter((m) => eq(m.from, sel.from) && starts(m.path, next));
+    if (cands.length) {
+      sel.path = next;
+      const done = cands.find((m) => m.path.length === next.length);
+      if (done) { send({ type: 'move', from: sel.from, path: done.path }); sel = null; }
+      return renderGame();
+    }
+  }
+  sel = G.legal.some((m) => eq(m.from, [r, c])) ? { from: [r, c], path: [] } : null;
+  renderGame();
+}
+
+function strip(el, c) {
+  const p = c === 'w' ? G.white : G.black;
+  el.innerHTML = `<span class="dot ${G.online[c] ? 'on' : ''}" title="${G.online[c] ? 'Online' : 'Offline'}"></span><b>${esc(p.username)}</b><span class="rt">${p.rating}</span><span class="clock" data-c="${c}"></span>`;
+}
+
+function renderGame() {
+  show('game');
+  const flip = G.you === 'b', opp = G.you === 'w' ? G.black : G.white;
+  renderBoard($('#board'), G.state.board, { flip, last: G.last, sel, legal: G.legal, click: onCell });
+  strip($('#top'), flip ? 'w' : 'b');
+  strip($('#bot'), flip ? 'b' : 'w');
+  $('#status').textContent = G.over ? 'Game over'
+    : G.state.turn === G.you ? (G.legal[0] && G.legal[0].captured.length ? 'Your move. You must capture.' : 'Your move')
+    : `Waiting for ${opp.username}`;
+
+  const o = G.offer, box = $('#offer');
+  box.classList.toggle('hidden', !o || G.over);
+  if (o && !G.over) {
+    const what = o.kind === 'draw' ? 'a draw' : 'to undo their last move';
+    box.innerHTML = o.from === G.you
+      ? `Waiting for ${esc(opp.username)} to answer your request ${o.kind === 'draw' ? 'for a draw' : 'to undo'}.`
+      : `${esc(opp.username)} ${o.kind === 'draw' ? 'offers' : 'asks'} ${what}.<div class="row"><button data-ans="1">Accept</button><button class="ghost" data-ans="0">Decline</button></div>`;
+  }
+  $('#draw').disabled = G.over || !!G.offer;
+  $('#undo').disabled = !G.canUndo;
+  $('#resign').disabled = !!G.over;
+  renderChat();
+
+  if (G.over) {
+    const w = G.over.winner, d = G.over.delta[G.you];
+    $('#resTitle').textContent = w === null ? 'Draw' : w === G.you ? 'You won' : 'You lost';
+    $('#resText').textContent = `${w === null ? 'Drawn' : 'Decided'} ${REASONS[G.over.reason] || ''}. Rating ${d > 0 ? '+' : ''}${d}.`;
+    $('#result').classList.remove('hidden');
+  }
+  tick();
+}
+
+function renderChat() {
+  const box = $('#chatlog');
+  box.textContent = '';
+  G.chat.forEach((m) => {
+    const p = document.createElement('p'), b = document.createElement('b');
+    b.textContent = (m.from === 'w' ? G.white : G.black).username + ' ';
+    if (m.from === G.you) b.className = 'mine';
+    p.append(b, m.text);
+    box.append(p);
+  });
+  box.scrollTop = box.scrollHeight;
+}
+
+function tick() {
+  if (!G || G.over) return;
+  const s = Math.max(0, Math.ceil((deadlineAt - Date.now()) / 1000));
+  document.querySelectorAll('.clock').forEach((el) => {
+    const active = el.dataset.c === G.state.turn;
+    el.textContent = active ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') : '';
+    el.classList.toggle('low', active && s <= 10);
+  });
+}
+setInterval(tick, 250);
+
+/* --------------------------------- Replay -------------------------------- */
+async function openReplay(id) {
+  try {
+    const d = await api('/api/games/' + id);
+    const states = [Dama.initialState()];
+    d.moves.forEach((m) => states.push(Dama.applyMove(states[states.length - 1], m)));
+    R = { d, states, i: 0, flip: d.black === me.username, timer: null };
+    const w = d.winner === null ? 'Draw' : (d.winner === 'w' ? d.white : d.black) + ' won';
+    $('#rtitle').textContent = `${d.white} vs ${d.black}: ${w} ${REASONS[d.end_reason] || ''}`;
+    $('#result').classList.add('hidden');
+    show('replay');
+    renderReplay();
+  } catch (e) { alert(e.message); }
+}
+function renderReplay() {
+  renderBoard($('#rboard'), R.states[R.i].board, { flip: R.flip, last: R.i ? R.d.moves[R.i - 1] : null });
+  $('#rinfo').textContent = `Move ${R.i} of ${R.d.moves.length}`;
+}
+function stepReplay(to) {
+  R.i = Math.max(0, Math.min(R.d.moves.length, to));
+  renderReplay();
+}
+
+/* --------------------------------- Events -------------------------------- */
+$('#login').onclick = () => authenticate('login');
+$('#register').onclick = () => authenticate('register');
+$('#p').onkeydown = (e) => e.key === 'Enter' && authenticate('login');
+$('#logout').onclick = logout;
+$('#find').onclick = () => send({ type: searching ? 'cancel' : 'queue' });
+$('#hist').onclick = (e) => { const id = e.target.dataset.replay; if (id) openReplay(id); };
+$('#draw').onclick = () => send({ type: 'offer', kind: 'draw' });
+$('#undo').onclick = () => send({ type: 'offer', kind: 'undo' });
+$('#resign').onclick = () => confirm('Resign this game?') && send({ type: 'resign' });
+$('#offer').onclick = (e) => { if (e.target.dataset.ans) send({ type: 'respond', accept: e.target.dataset.ans === '1' }); };
+$('#chatform').onsubmit = (e) => {
+  e.preventDefault();
+  const t = $('#chatin').value.trim();
+  if (t) send({ type: 'chat', text: t });
+  $('#chatin').value = '';
+};
+$('#resLobby').onclick = () => { G = null; $('#result').classList.add('hidden'); show('lobby'); loadLobby(); };
+$('#resReplay').onclick = () => { const id = G.id; G = null; openReplay(id); };
+$('#rback').onclick = () => { show('lobby'); loadLobby(); };
+$('#replay').onclick = (e) => {
+  const a = e.target.dataset.r;
+  if (!a || !R) return;
+  stepReplay(a === 'first' ? 0 : a === 'last' ? 1e9 : R.i + (a === 'next' ? 1 : -1));
+};
+$('#rplay').onclick = () => {
+  if (R.timer) { clearInterval(R.timer); R.timer = null; $('#rplay').textContent = 'Auto-play'; return; }
+  if (R.i >= R.d.moves.length) stepReplay(0);
+  $('#rplay').textContent = 'Pause';
+  R.timer = setInterval(() => {
+    if (R.i >= R.d.moves.length) { clearInterval(R.timer); R.timer = null; $('#rplay').textContent = 'Auto-play'; return; }
+    stepReplay(R.i + 1);
+  }, 900);
+};
+
+(async () => {
+  if (!token) return show('auth');
+  try { me = await api('/api/me'); enter(); } catch { logout(); }
+})();
+</script>
+</body>
+</html>
